@@ -6,7 +6,7 @@ type Community = {
   url?: string; source: string; photo_200?: string
 }
 
-const API = 'http://localhost:8000'
+const API = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8000' : '')
 
 export default function App() {
   const [query, setQuery] = useState('детская одежда')
@@ -19,6 +19,7 @@ export default function App() {
     if (query.trim().length < 2) return
     setLoading(true); setError('')
     try {
+      if (!API) throw new Error('Backend ещё не подключён. После публикации API поиск станет доступен.');
       const res = await fetch(`${API}/api/communities/search?q=${encodeURIComponent(query)}&count=30`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.detail || 'Ошибка поиска')
