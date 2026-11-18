@@ -23,6 +23,7 @@ export default function App() {
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [minMembers, setMinMembers] = useState('0')
   const [sort, setSort] = useState('members')
+  const [cityId, setCityId] = useState('')
 
   async function checkHealth() {
     if (!API) { setConnected(false); return }
@@ -53,7 +54,8 @@ export default function App() {
     setLoading(true); setError('')
     try {
       if (!API) throw new Error('Локальный backend не запущен. Запустите start-local.bat на ноутбуке.')
-      const res = await fetch(`${API}/api/communities/search?q=${encodeURIComponent(searchQuery)}&count=100`)
+      const cityParam = cityId.trim() ? `&city_id=${encodeURIComponent(cityId.trim())}` : ''
+      const res = await fetch(`${API}/api/communities/search?q=${encodeURIComponent(searchQuery)}&count=100${cityParam}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.detail || 'Ошибка поиска')
       setItems(data.items || [])
@@ -105,7 +107,7 @@ export default function App() {
         <div className="searchCard">
           <div className="cardTitle"><div><h2>Найти сообщества VK</h2><p>Введите тематику, товар или интерес аудитории</p></div><span className="apiPill">{mode === 'vk_api' ? 'VK API · LIVE' : mode === 'demo' ? 'ДЕМО-ДАННЫЕ' : 'ЛОКАЛЬНЫЙ ПОИСК'}</span></div>
           <div className="searchRow"><div className="searchInput"><Search size={19}/><input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>e.key==='Enter'&&search()} placeholder="Например, детская одежда"/></div><button className="primary" onClick={()=>search()} disabled={loading}>{loading?<LoaderCircle className="spin" size={17}/>:<Search size={17}/>} Найти сообщества</button></div>
-          <div className="chips"><span>Популярные запросы:</span>{['детская одежда','игрушки','товары для новорождённых','мамы и дети'].map(x=><button key={x} onClick={()=>{setQuery(x);void search(x)}}>{x}</button>)}</div>
+          <div className="filterBar searchFilters"><label>Город ID VK <input type="number" min="1" placeholder="Необязательно" value={cityId} onChange={e=>setCityId(e.target.value)}/></label><span>Оставьте пустым для поиска по всем городам.</span></div><div className="chips"><span>Популярные запросы:</span>{['детская одежда','игрушки','товары для новорождённых','мамы и дети'].map(x=><button key={x} onClick={()=>{setQuery(x);void search(x)}}>{x}</button>)}</div>
         </div>
         <div className="resultsHead"><div><h2>Результаты поиска</h2><p>{visibleItems.length ? `Показано: ${visibleItems.length} из ${items.length}` : 'Здесь появятся найденные сообщества'}</p></div>{items.length>0&&<button className="secondary" onClick={exportCsv}><Download size={16}/> Экспорт ID сообществ</button>}</div>
         {error&&<div className="error">{error}</div>}
