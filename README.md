@@ -1,45 +1,49 @@
 # VK Audience Hunter
 
-Веб-проект для поиска и аналитики публичных сообществ VK и подготовки community-аудиторий для VK Ads.
+Веб-приложение для поиска и аналитики открытых сообществ VK и подготовки community-аудиторий для VK Ads.
 
-## Стек
-- Frontend: React + TypeScript + Vite
-- Backend: Python + FastAPI
-- Database: PostgreSQL (схема в `backend/schema.sql`)
-- VK API: серверная интеграция, токен хранится только на backend
+## Текущий состав
+- Frontend: React + TypeScript + Vite (файлы в корне репозитория).
+- Backend: Python + FastAPI (main.py, vk_client.py, config.py).
+- VK API: серверный адаптер для метода groups.search.
+- Database: SQL-заготовка PostgreSQL в schema.sql; подключение к БД ещё не реализовано.
+- Deployment: GitHub Pages для frontend; Docker + Render Blueprint для backend.
 
-## Важно
-Проект не выгружает списки участников чужих сообществ, не собирает персональные ID и не строит персональные профили. Он работает с данными сообществ и разрешёнными агрегированными показателями. Для рекламного таргетинга используйте штатный community targeting в VK Ads.
-
-## Запуск
+## Локальный запуск
 
 ### Backend
+Требуется Python 3.11+.
 ```bash
-cd backend
 python -m venv .venv
 # Windows:
 .venv\Scripts\activate
 # macOS/Linux:
 source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+uvicorn main:app --reload
 ```
-API: http://127.0.0.1:8000  
+
+API: http://127.0.0.1:8000
+Проверка: http://127.0.0.1:8000/api/health
 Swagger: http://127.0.0.1:8000/docs
 
 ### Frontend
-В отдельном терминале:
+В другом терминале:
 ```bash
-cd frontend
 npm install
 npm run dev
 ```
 Frontend: http://localhost:5173
 
-## Подключение VK API
-1. Создайте приложение/получите токен в официальном кабинете VK для подходящего сценария.
-2. Скопируйте `backend/.env.example` в `backend/.env`.
-3. Укажите `VK_ACCESS_TOKEN` и актуальную `VK_API_VERSION`.
-4. Никогда не помещайте токен в frontend, GitHub или публичные репозитории.
+Для production задайте переменную сборки VITE_API_BASE_URL с URL опубликованного backend. Без неё интерфейс на GitHub Pages сообщит, что API ещё не подключён.
 
-В текущей заготовке поиск демонстрационный. Backend уже содержит серверный адаптер `groups.search`; после добавления токена можно включить реальные запросы.
+## Публикация backend через Render
+В Render можно создать Blueprint из этого репозитория — конфигурация находится в render.yaml. Сборка Docker описана в Dockerfile.
+После публикации добавьте GitHub Actions repository variable VITE_API_BASE_URL со значением URL backend. Добавьте домен backend в CORS allowlist в main.py и запустите новую сборку Pages.
+Для реального поиска VK задайте серверную переменную окружения VK_ACCESS_TOKEN. Не помещайте токен в frontend, исходники, GitHub или публичные файлы.
+
+## Данные и безопасность
+Приложение работает с открытыми данными сообществ и не собирает списки участников, персональные ID или персональные профили. Для таргетинга используйте разрешённые инструменты VK Ads.
+
+## Статус
+Frontend собирается через GitHub Actions. Backend подготовлен к Docker-развёртыванию, но ещё не опубликован. PostgreSQL пока представлен схемой, без подключения приложения к базе.
