@@ -1,17 +1,26 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from vk_client import search_communities, VKAPIError
+from database import init_db, save_search, get_recent_searches
 
-app = FastAPI(title="VK Audience Hunter API", version="0.1.0")
+app = FastAPI(title="VK Audience Hunter API", version="0.2.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "https://artem-verified.github.io"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://artem-verified.github.io",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# SQLite is stored locally on this computer in ./data by default.
+init_db()
+
 
 class Community(BaseModel):
     id: int
@@ -24,11 +33,13 @@ class Community(BaseModel):
     url: str | None = None
     source: str = "demo"
 
+
 class SearchResponse(BaseModel):
     query: str
     total: int
     items: list[Community]
     mode: str
+
 
 DEMO_COMMUNITIES = [
     Community(id=101, name="Детская одежда — идеи и покупки", screen_name="kids_style_demo", members_count=18400, type="group", url="https://vk.com/kids_style_demo"),
@@ -36,9 +47,11 @@ DEMO_COMMUNITIES = [
     Community(id=103, name="Детские товары и игрушки", screen_name="kids_goods_demo", members_count=12700, type="group", url="https://vk.com/kids_goods_demo"),
 ]
 
+
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "service": "vk-audience-hunter"}
+    return {"status": "ok", "service": "vk-audience-hunter", "storage": "local_sqlite"}
+
 
 @app.get("/api/communities/search", response_model=SearchResponse)
 async def communities_search(
@@ -54,23 +67,41 @@ async def communities_search(
         raise HTTPException(status_code=502, detail=f"VK API request failed: {exc}")
 
     if result is None:
-        items = [c.model_copy() for c in DEMO_COMMUNITIES if any(word.lower() in c.name.lower() for word in q.split())]
-        return SearchResponse(query=q, total=len(items), items=items, mode="demo")
+        items = [
+            c.model_copy()
+            for c in DEMO_COMMUNITIES
+            if any(word.lower() in c.name.lower() for word in q.split())
+        ]
+        response = SearchResponse(query=q, total=len(items), items=items, mode="demo")
+    else:
+        raw_items = result.get("items", [])
+        items = []
+        for item in raw_items:
+            gid = item.get("id")
+            screen = item.get("screen_name")
+            items.append(Community(
+                id=gid,
+                name=item.get("name", "Без названия"),
+                screen_name=screen,
+                members_count=item.get("members_count"),
+                is_closed=item.get("is_closed"),
+                type=item.get("type"),
+                photo_200=item.get("photo_200"),
+                url=f"https://vk.com/{screen}" if screen else f"https://vk.com/club{gid}",
+                source="vk_api",
+            ))
+        response = SearchResponse(
+            query=q,
+            total=result.get("count", len(items)),
+            items=items,
+            mode="vk_api",
+        )
 
-    raw_items = result.get("items", [])
-    items = []
-    for item in raw_items:
-        gid = item.get("id")
-        screen = item.get("screen_name")
-        items.append(Community(
-            id=gid,
-            name=item.get("name", "Без названия"),
-            screen_name=screen,
-            members_count=item.get("members_count"),
-            is_closed=item.get("is_closed"),
-            type=item.get("type"),
-            photo_200=item.get("photo_200"),
-            url=f"https://vk.com/{screen}" if screen else f"https://vk.com/club{gid}",
-            source="vk_api",
-        ))
-    return SearchResponse(query=q, total=result.get("count", len(items)), items=items, mode="vk_api")
+    save_search(response.query, response.total, response.mode, [item.model_dump() for item in response.items])
+    return response
+
+
+@app.get("/api/history")
+async def search_history(limit: int = Query(default=20, ge=1, le=100)):
+    """Return recent search history stored on this computer."""
+    return {"items": get_recent_searches(limit)}
