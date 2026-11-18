@@ -1,5 +1,5 @@
 import httpx
-from .config import settings
+from config import settings
 
 VK_API_BASE = "https://api.vk.com/method"
 
