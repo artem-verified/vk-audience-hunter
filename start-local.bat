@@ -23,13 +23,19 @@ if errorlevel 1 (
 if not exist ".venv\Scripts\python.exe" (
   echo Creating Python environment...
   python -m venv .venv
-  if errorlevel 1 pause & exit /b 1
+  if errorlevel 1 (
+    pause
+    exit /b 1
+  )
 )
 
 call ".venv\Scripts\activate.bat"
 echo Installing/checking backend packages...
 python -m pip install -r requirements.txt
-if errorlevel 1 pause & exit /b 1
+if errorlevel 1 (
+  pause
+  exit /b 1
+)
 
 if not exist ".env" (
   copy ".env.example" ".env" >nul
@@ -39,7 +45,10 @@ if not exist ".env" (
 if not exist "node_modules" (
   echo Installing frontend packages...
   call npm install
-  if errorlevel 1 pause & exit /b 1
+  if errorlevel 1 (
+    pause
+    exit /b 1
+  )
 )
 
 start "VK Audience Hunter API" cmd /k "cd /d ""%~dp0"" && call .venv\Scripts\activate.bat && uvicorn main:app --reload"
