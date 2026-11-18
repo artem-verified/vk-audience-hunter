@@ -1,13 +1,13 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from .vk_client import search_communities, VKAPIError
+from vk_client import search_communities, VKAPIError
 
 app = FastAPI(title="VK Audience Hunter API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "https://artem-verified.github.io"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
