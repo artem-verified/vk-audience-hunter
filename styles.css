@@ -13,3 +13,5 @@
 .historyItem:hover{background:#f8fafc}.historyItem b{display:block;color:#29384d}.historyItem small{display:block;color:#98a2b1;margin-top:4px}.historyItem>span:last-child{white-space:nowrap}
 .status{display:flex;align-items:center;gap:6px}
 @media(max-width:760px){.sidebar{display:none}.content{padding:22px 16px}.stats{grid-template-columns:repeat(2,1fr)}header{padding:0 16px}.pageTop{align-items:start;gap:12px;flex-direction:column}.searchRow{flex-direction:column}.primary{width:100%}.filterBar{align-items:flex-start;flex-direction:column}.tableWrap{overflow-x:auto}table{min-width:620px}}
+
+.searchFilters{margin:12px 0 0;padding:0;border:0;background:transparent;color:#8491a2}.searchFilters input{width:145px}.searchFilters span{font-size:10px}
