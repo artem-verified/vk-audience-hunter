@@ -1,11 +1,13 @@
 import json
-import os
 import sqlite3
 from pathlib import Path
 from datetime import datetime, timezone
 
-PROJECT_DIR = Path(__file__).resolve().parent
-DB_PATH = Path(os.getenv("DATABASE_PATH", str(PROJECT_DIR / "data" / "audience_hunter.db"))).expanduser()
+from config import settings
+
+DB_PATH = Path(settings.database_path).expanduser()
+if not DB_PATH.is_absolute():
+    DB_PATH = Path(__file__).resolve().parent / DB_PATH
 
 
 def _connect():
